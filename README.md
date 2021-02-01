@@ -39,7 +39,7 @@ The directory structure is as follows:
 Run `make` in the root folder `ispd2021`. This will build the executable in `out` directory. An alternative is to run `gcc -std=c11 -Wall -O2 ispd_validate.c -o ispd_validate -lm` in the folder `validator`.
 
 ## Running the Executable
-The executable follows the same format as special compare executables used in DomJudge ([link](https://www.domjudge.org/docs/manual/7.3/config-advanced.html#special-run-and-compare-programs)).
+After building the executable using `make` or manually, it can be run as follows
 
 ```
 $ ./ispd_validate <testdata.in> [flags] < <team_output.out>
