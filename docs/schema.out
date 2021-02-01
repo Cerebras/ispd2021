@@ -1,0 +1,16 @@
+# this is a comment
+inv_sampling_step
+resolution origin_x origin_y [origin_z] shape_length shape_width [shape_height]
+.
+.
+.
+compute_map:
+point_x point_y
+.
+.
+.
+adapter_map:
+point_x point_y
+.
+.
+.

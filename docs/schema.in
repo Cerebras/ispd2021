@@ -1,0 +1,11 @@
+# this is a comment
+dimension
+vol_length vol_width [vol_height]
+gridpoints_per_tile_edge
+fabric_width fabric_height
+cost_alpha cost_beta
+# Heatmap is filled in x then y then z
+heatmap_val
+.
+.
+.
