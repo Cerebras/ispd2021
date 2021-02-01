@@ -1,0 +1,10 @@
+# Inverse sampling step
+10
+# Prisms
+0 0 0 2 2
+compute_map:
+0 0
+0 1
+0 2
+0 3
+adapter_map:

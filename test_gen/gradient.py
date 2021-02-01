@@ -1,31 +1,31 @@
 dim = 2
 vol_x = 32
 vol_y = 32
-gridpoints_per_tile_edge = 1
+gridpoints_per_tile_edge = 10
 fab_x = 256
 fab_y = 256
 cost_a = 1
 cost_b = 1
 
-inv_sampling_step = 8
+inv_sampling_step = 80
 
-with open("ispd/tests/gradient/gradient_big.in", "w+") as f:
-    f.write(F"{dim}\n")
-    f.write(F"{vol_x} {vol_y}\n")
-    f.write(F"{gridpoints_per_tile_edge}\n")
-    f.write(F"{fab_x} {fab_y}\n")
-    f.write(F"{cost_a} {cost_b}\n")
+with open("ispd/tests/2d/gradient/gradient_big.in", "w+") as f:
+    f.write(F"# Dimension\n{dim}\n")
+    f.write(F"# Volume X Y\n{vol_x} {vol_y}\n")
+    f.write(F"# Fabric X Y\n{fab_x} {fab_y}\n")
+    f.write(F"# Cost Params\n{cost_a} {cost_b}\n")
 
     for i in range(0, vol_y + 1):
         for j in range(0, vol_x + 1):
             f.write(F"{float(i + 1) / (vol_y + 1)}\n")
 
-with open("ispd/tests/gradient/gradient_big.out", "w+") as f:
-    f.write(F"{inv_sampling_step}\n")
+with open("ispd/tests/2d/gradient/gradient_big.out", "w+") as f:
+    f.write(F"# Inverse sampling step\n{inv_sampling_step}\n")
     
     y_sum = 0
     y_height = vol_y / 4
     compute_num = 0
+    f.write(F"# Prisms\n")
     for i in reversed(range(0, 4)):
         x_dim = int(vol_x * inv_sampling_step / (2 ** i * gridpoints_per_tile_edge))
         y_dim = int(vol_y * inv_sampling_step / (2 ** i * gridpoints_per_tile_edge * 4))

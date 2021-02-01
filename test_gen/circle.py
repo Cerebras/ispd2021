@@ -1,43 +1,47 @@
 dim = 2
 vol_x = 9
 vol_y = 9
-gridpoints_per_tile_edge = 1
+gridpoints_per_tile_edge = 10
 fab_x = 200
 fab_y = 200
 cost_a = 1
 cost_b = 1
 
-inv_sampling_step = 4
+inv_sampling_step = 40
 
-with open("ispd/tests/circle/circle.in", "w+") as f:
-    f.write(F"{dim}\n")
-    f.write(F"{vol_x} {vol_y}\n")
-    f.write(F"{gridpoints_per_tile_edge}\n")
-    f.write(F"{fab_x} {fab_y}\n")
-    f.write(F"{cost_a} {cost_b}\n")
+with open("ispd/tests/2d/circle/circle.in", "w+") as f:
+    f.write(F"# Dimension\n{dim}\n")
+    f.write(F"# Volume X Y\n{vol_x} {vol_y}\n")
+    f.write(F"# Fabric X Y\n{fab_x} {fab_y}\n")
+    f.write(F"# Cost Params\n{cost_a} {cost_b}\n")
 
     half_y = int((vol_y + 1) / 2)
     half_x = int((vol_x + 1) / 2)
 
     radius = min(vol_x + 1, vol_y + 1)
 
+    f.write(F"# Heatmap\n")
+
     for i in range(0, vol_y + 1):
+        f.write(F"# y = {i}\n")
         for j in range(0, vol_x + 1):
             value = max(1 - ((i - half_y) ** 2 + (j - half_x) ** 2) / radius, 0.01)
             f.write(F"{value}\n")
 
-with open("ispd/tests/circle/circle.out", "w+") as f:
-    f.write(F"{inv_sampling_step}\n")
+with open("ispd/tests/2d/circle/circle.out", "w+") as f:
+    f.write(F"# Inverse sampling step\n{inv_sampling_step}\n")
 
     compute_num = 0
+
+    f.write("# Prisms\n")
 
     for i in range(0, 3):
         for j in range(0, 3):
             x_point = int(vol_x * inv_sampling_step / 3 * j)
             y_point = int(vol_y * inv_sampling_step / 3 * i)
 
-            x_shape = int(vol_x * inv_sampling_step / (3 * 4))
-            y_shape = int(vol_y * inv_sampling_step / (3 * 4))
+            x_shape = int(vol_x * inv_sampling_step / gridpoints_per_tile_edge / (3 * 4))
+            y_shape = int(vol_y * inv_sampling_step / gridpoints_per_tile_edge / (3 * 4))
             if i == 1 and j == 1:
                 x_shape *= 4
                 y_shape *= 4

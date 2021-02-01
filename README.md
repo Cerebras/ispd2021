@@ -8,9 +8,12 @@ The directory structure is as follows:
     - `docs`: Folder for documentation and related files
         - `schema.in`: File format explaination for problem input
         - `schema.out`: File format explaination for solution input
+    - `Makefile`: Makefile for compiling validator
     - `test.sh`: Script to run test suites and test cases
     - `test_gen`: Folder containing scripts to generate test cases
     - `tests`: Folder containing test suites and test cases
+        - `2d`: 2D tests
+        - `3d`: 3D tests
     - `tools`: Folder containing tools to help visualize problem defintions and solutions
         - `requirements.txt`: Requirements for running visualization tools
         - `visualize_placements.py`: Visualize a solution's placement of tiles on the fabric
@@ -19,8 +22,8 @@ The directory structure is as follows:
     - `README.md`: This README file
     - `validator`: Folder for validator source code
         - `ispd_validate.h`: Header file containing problem and solution declarations
-        - `util.h`: Header file with dependencies and useful macros
         - `ispd_validate.c`: Source code for validator/solver
+        - `util.h`: Header file with dependencies and useful macros
 ## Key Terms
 - Tile: A section of space that corresponds to a single processor.
 - Heatmap Space: Coordinate system using Cartesian axes, where the unit step is `1.0 / volume`. This is the coordinate system that heatmap points use.
@@ -33,13 +36,13 @@ The directory structure is as follows:
 - Tile ID: ID of a tile, based off of the ordering of prisms in the solution and the size of each prism. See the source code for how it is computed.
 
 ## Building the Executable
-Run `gcc -std=c11 -Wall -O2 ispd_validate.c -o ispd_validate -lm` in the folder `validator`.
+Run `make` in the root folder `ispd2021`. This will build the executable in `out` directory. An alternative is to run `gcc -std=c11 -Wall -O2 ispd_validate.c -o ispd_validate -lm` in the folder `validator`.
 
 ## Running the Executable
 The executable follows the same format as special compare executables used in DomJudge ([link](https://www.domjudge.org/docs/manual/7.3/config-advanced.html#special-run-and-compare-programs)).
 
 ```
-$ ./validate <testdata.in> [flags] < <team_output.out>
+$ ./ispd_validate <testdata.in> [flags] < <team_output.out>
 ```
 
 - `testdata.in`: Indicates the path to a file containing the problem definition (`*.in` files)
@@ -67,7 +70,7 @@ If validation failed, scoring will not occur, but instead the executable will re
 When the number of adapters in the solution adapter map (see [below](###Problem-Solution)) is not equal to the number of adapters required by the solution, the validator will output a table of connections which require adapters. This table has three columns refering to the current tile, the face of the current tile for this connection, and the adjacent tile. This list is sorted in ascending order of current tile ID, face ID and adjacent tile ID.
 
 ## Testing the Executable
-Tests are arranged in the `tests` folders into various subfolders which designate a test suite. The name of the test suite is the name of the folder. Inside the test suite are test cases which are seperated by file name. Each test case has a `.in` and a `.out` file corresponding to the test problem and solution respectively.
+Tests are arranged in the `tests` folders into various subfolders which designate a test suite. The name of the test suite is the name of the folder. Inside the test suite are test cases which are seperated by file name. Each test case has a `.in` and a `.out` file corresponding to the test problem and solution respectively. 2D and 3D tests of the same suite are seperated into two folders `2d` and `3d` based on the dimension of each test problem.
 The `test.sh` script can be used to run the various test suites/cases in the `tests` folder. It is called as follows
 ```
 $ ./test.sh <validator> <feedback_dir> <suite> [test_case [additional_args]]
@@ -164,14 +167,14 @@ $ python visualize_heatmap.py [-h] [-i] problem [-o output]
 
 #### Examples
 ```
-$ python visualize_heatmap.py -i ../tests/gradient/gradient_big.in -o ../docs/gradient_big.png
+$ python visualize_heatmap.py -i ../tests/2d/gradient/gradient_big.in -o ../docs/gradient_big.png
 ```
 will create an interpolated PNG 2D heatmap of the `gradient_big.in` test
 
 ![gradient_big.in](./docs/gradient_big.png)
 
 ```
-$ python visualize_heatmap.py ../tests/sphere/sphere.in -o ../docs/sphere.png
+$ python visualize_heatmap.py ../tests/3d/sphere/sphere.in -o ../docs/sphere.png
 ```
 will create a PNG 3D heatmap of the `sphere.in` test.
 
@@ -191,7 +194,7 @@ $ python visualize_placement.py [-h] problem solution [-o output]
 
 #### Example
 ```
-$ python visualize_placements.py ../tests/box/box_small_solved.in ../tests/box/box_small_solved.out -o ../docs/box_small_placement.png
+$ python visualize_placements.py ../tests/2d/box/box_small_solved.in ../tests/2d/box/box_small_solved.out -o ../docs/box_small_placement.png
 ```
 will visualize the placements of the `box_small_solved.in` test.
 
@@ -210,7 +213,7 @@ $ python visualize_resolution_diff.py [-h] data [-o output]
 
 #### Example
 ```
-$ ../validator/ispd_validate ../tests/simple/simple_2d.in . .. -r < ../tests/simple/simple_2d.out > ../docs/simple_2d_resolution.txt
+$ ../out/ispd_validate ../tests/2d/simple/simple_2d.in . .. -r < ../tests/2d/simple/simple_2d.out > ../docs/simple_2d_resolution.txt
 $ python visualize_resolution_diff.py ../docs/simple_2d_resolution.txt -o ../docs/simple_2d_resolution.png
 ```
 will visualize the resolution values of the `simple_2d.in` test.

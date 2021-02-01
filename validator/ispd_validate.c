@@ -1,3 +1,4 @@
+#include "util.h"
 #include "ispd_validate.h"
 
 #define DOUBLE_EPSILON 0.000000001 // Epsilon value for approximate double equality
