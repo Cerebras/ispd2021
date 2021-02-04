@@ -26,13 +26,11 @@ def visualize_placements(problem: str, solution: str, out: str):
 
     dim = int(next(prob_iter))
     volume = [int(x) for x in re.findall(r'\d+', next(prob_iter))]
-    gpte = int(next(prob_iter))
     fabric = [int(x) for x in re.findall(r'\d+', next(prob_iter))]
     cost = [float(x) for x in re.findall(r'\d+', next(prob_iter))]
 
     print(dim)
     print(volume)
-    print(gpte)
     print(fabric)
     print(cost)
     
