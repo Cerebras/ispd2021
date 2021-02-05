@@ -1896,15 +1896,18 @@ double score_solution()
     double accuracy_norm = accuracy / max_accuracy;
     double wires_norm = min_d(max_wires_tot / wires, max_wires_curr / wires);
 
+    double final_score = prob->cost.alpha * accuracy_norm + prob->cost.beta * wires_norm;
+
     if (opt.flags & SCORE)
     {
         printf("Pure Accuracy: %f / %f\n", accuracy, max_accuracy);
         printf("Pure Connectivity: %f / (%f or %f)\n", wires, max_wires_tot, max_wires_curr);
         printf("Normalized Accuracy: %f\n", accuracy_norm);
         printf("Normalized Connectivity: %f\n", wires_norm);
+        printf("Final Score: %f\n", final_score);
     }
 
-    return prob->cost.alpha * accuracy_norm + prob->cost.beta * wires_norm;
+    return final_score;
 }
 
 int main(int argc, char **argv)
