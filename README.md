@@ -127,6 +127,7 @@ The following definition assumes no commented lines.
         - For 2D this is `(vol_length + 1) * (vol_width + 1)`
         - For 3D this is `(vol_length + 1) * (vol_width + 1) + (vol_height + 1)`
     - Heatmap is filled in by x then y then z
+    - The max value across the entire heatmap must be 1.0
 ### Problem Solution
 The following definition assumes no commented lines
 - Line 1: Inverse sampling step (positive integer)
