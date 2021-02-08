@@ -816,7 +816,7 @@ void build_connectivity()
                 }
             }
 
-            if (t->bounds.low_bounds[j] < volume_bounds.up_bounds[j])
+            if (t->bounds.up_bounds[j] < volume_bounds.up_bounds[j])
             {
                 node_bounds adjacent_range;
                 for (int k = 0; k < dimension; k += 1)
