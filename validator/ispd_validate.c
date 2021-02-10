@@ -1813,7 +1813,7 @@ double score_wires()
         int aid = connection_list[i].adjacent_tile;
 
         int curr_res = tile_list[cid]->parent->resolution;
-        int adj_res = tile_list[cid]->parent->resolution;
+        int adj_res = tile_list[aid]->parent->resolution;
 
         if (curr_res == adj_res)
         {
