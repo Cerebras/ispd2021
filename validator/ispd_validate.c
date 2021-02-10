@@ -1182,11 +1182,41 @@ int validate_adapters()
 
     neighbour *adapter_list = get_adjacent_list(need_adapters);
 
-    if (v_count(adapter_list) != nadaptor)
+    int adapter_count = v_count(adapter_list);
+
+    if (adapter_count != nadaptor)
     {
         printf("Invalid number of adapters, see below for required connections:\n");
         print_connectivity(need_adapters, 1);
         success = 0;
+    }
+    if (success)
+    {
+        // Check that faces all use the same adapter
+        int curr_face = -1;
+        int curr_tile = -1;
+        int curr_adapter_x = -1;
+        int curr_adapter_y = -1;
+        for (int i = 0; i < adapter_count; i += 1)
+        {
+            if (curr_tile != adapter_list[i].curr_tile)
+            {
+                curr_tile = adapter_list[i].curr_tile;
+                curr_face = adapter_list[i].face;
+                curr_adapter_x = sol->adapter_map[i].x;
+                curr_adapter_y = sol->adapter_map[i].y;
+            }
+            else if (curr_face != adapter_list[i].face)
+            {
+                curr_face = adapter_list[i].face;
+                curr_adapter_x = sol->adapter_map[i].x;
+                curr_adapter_y = sol->adapter_map[i].y;
+            }
+
+            fatalif(curr_adapter_x != sol->adapter_map[i].x || curr_adapter_y != sol->adapter_map[i].y,
+                    "Adjacent tile %d on face %d of tile %d does not use the same adapter (%d, %d) vs (%d, %d)",
+                    adapter_list[i].adjacent_tile, curr_face, curr_tile, curr_adapter_x, curr_adapter_y, sol->adapter_map[i].x, sol->adapter_map[i].y);
+        }
     }
 
     v_free(adapter_list);
@@ -1831,23 +1861,19 @@ double score_wires()
     // Sum all adapter connections
     connection_list = get_adjacent_list(need_adapters);
     nconnection = v_count(connection_list);
-    int curr_cid = -1;
-    bool curr_added = 0;
+
+    bool *faces_added = calloc(6 * v_count(tile_list), sizeof(bool));
+
     for (int i = 0; i < nconnection; i += 1)
     {
         int cid = connection_list[i].curr_tile;
+        int face = connection_list[i].face;
         int aid = connection_list[i].adjacent_tile;
 
-        // this works since connection list is sorted by tile id
-        if (curr_cid != cid)
+        // Check if current face has been added or not
+        if (faces_added[6 * cid + face] == 0)
         {
-            curr_cid = cid;
-            curr_added = 0;
-        }
-
-        // Add score of current to adapter if not already added
-        if (!curr_added)
-        {
+            // Add score of current to adapter if not already added
             double c_x = sol->compute_map[cid].x - sol->adapter_map[i].x;
             double c_y = sol->compute_map[cid].y - sol->adapter_map[i].y;
 
@@ -1855,7 +1881,7 @@ double score_wires()
             sum_wires += 2 * (abs_d(c_x) + abs_d(c_y));
             sum_1_5_norm += 2 * pow(abs_d(c_x) + abs_d(c_y), WIRE_POW);
 
-            curr_added = 1;
+            faces_added[6 * cid + face] = 1;
         }
 
         // Add score of adapter to adjacent
@@ -1870,6 +1896,8 @@ double score_wires()
     {
         printf("Total Wire Length: %f\n", sum_wires);
     }
+
+    free(faces_added);
 
     return pow(sum_1_5_norm, 1.0 / WIRE_POW);
 }

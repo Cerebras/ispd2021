@@ -149,6 +149,7 @@ The following definition assumes no commented lines
     - The adapter map is used to map tiles used for adapters in the solution to placements on the fabric
 - Line Y + 1 to EOF: The following lines define entries of the adpater map
     - Each line is two positive integers representing a position on the fabric
+    - The same adapter is used for all tiles that are adjacent to the same face
     - The index of the tile map corresponds to the index of the adapter list created when validating adapters, (see [above](###Finding-Adapters))
 
 ## Visualizations
