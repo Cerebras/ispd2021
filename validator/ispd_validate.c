@@ -1329,7 +1329,7 @@ double interpolate_heatmap_value(double *scaled_coords)
         double f_221 = x_diff < DOUBLE_EPSILON ? get_heatmap_value(p_221) : (scaled_coords[0] - floored_coords[0]) * get_heatmap_value(p_221);
 
         // Z High
-        double f_112 = y_diff < DOUBLE_EPSILON ? get_heatmap_value(p_112) : (ceil_coords[0] - scaled_coords[0]) * get_heatmap_value(p_112);
+        double f_112 = x_diff < DOUBLE_EPSILON ? get_heatmap_value(p_112) : (ceil_coords[0] - scaled_coords[0]) * get_heatmap_value(p_112);
         double f_212 = x_diff < DOUBLE_EPSILON ? get_heatmap_value(p_212) : (scaled_coords[0] - floored_coords[0]) * get_heatmap_value(p_212);
 
         double f_122 = x_diff < DOUBLE_EPSILON ? get_heatmap_value(p_122) : (ceil_coords[0] - scaled_coords[0]) * get_heatmap_value(p_122);
@@ -1662,7 +1662,7 @@ double find_max_overshoot_z(double x_low, double x_high, double y_low, double y_
 
     double max_overshoot = 0.0;
 
-    for (int i = range_low; i < range_high; i += 1)
+    for (int i = range_low; i <= range_high; i += 1)
     {
         double val = find_max_overshoot_y(x_low, x_high, y_low, y_high, i, sol_val);
 
