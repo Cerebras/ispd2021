@@ -4,55 +4,56 @@
 /* [ ] problem specific parameters, the defining cost landscape */
 struct costparams
 {
-	float alpha;
-	float beta;
+    float alpha;
+    float beta;
 };
 
 /* problem definition */
 struct problem
 {
-	/* heatmap space parameters */
-	int volume_shape[NDIM]; /* heatmap space shape */
-	float *heatmap;			/* heatmap */
+    /* heatmap space parameters */
+    int volume_shape[NDIM]; /* heatmap space shape */
+    float *heatmap;         /* heatmap */
 
-	/* solution space parameters */
-	int gridpoints_per_tile_edge; /* edge of the cube mapped to a tile */
-	int fabric_shape[2];		  /* fabric shape */
+    /* solution space parameters */
+    int gridpoints_per_tile_edge; /* edge of the cube mapped to a tile */
+    int fabric_shape[2];          /* fabric shape */
 
-	struct costparams cost; /* coeffs that parameterize the cost */
+    struct costparams cost; /* coeffs that parameterize the cost */
 };
 
 /* coordinate of a tile on the fabric */
 struct pt
 {
-	int x; /* x coordinate of point */
-	int y; /* y coordinate of point */
+    int x; /* x coordinate of point */
+    int y; /* y coordinate of point */
 };
 
 /* partition prism parameters */
 struct prism
 {
-	int resolution;	  /* log2 of spacing between adjecent gridpoints */
-	int origin[NDIM]; /* prism's origin designated using the finest resolution coordinates  (sampling space)    */
-	int shape[NDIM];  /* prism's dimensions in units of tiles */
+    int resolution;   /* log2 of spacing between adjecent gridpoints */
+    int is_empty;     /* is this prism considered empty */
+    int origin[NDIM]; /* prism's origin designated using the finest resolution coordinates  (sampling space)    */
+    int shape[NDIM];  /* prism's dimensions in units of tiles */
 };
 
 /* partition of the heatmap space */
 struct solution
 {
-	int inv_sampling_step;	/* number of gridpoints per volume unit */
-	int nprims;				/* number of prisms    */
-	struct prism *prism;	/* array of prisims    */
-	struct pt *compute_map; /* compute tile array  */
-	struct pt *adapter_map; /* adapter tile array  */
+    int inv_sampling_step;  /* number of gridpoints per volume unit */
+    int nprims;             /* number of prisms    */
+    struct prism *prism;    /* array of prisims    */
+    struct pt *compute_map; /* compute tile array  */
+    struct pt *adapter_map; /* adapter tile array  */
 };
 
 /* undirectional connectivity [derived] */
 struct connectivity
 {
-	int ntiles;					   /* total number of tiles */
-	int *adjacent_tiles[NUM_PRISM_FACES][4]; /* Id of adjacent tiles, 6 faces, max of 4 neighbors per face */
-	int *current_tile;			   /* Current tile id */
+    int ntiles;                              /* total number of tiles */
+    int *adjacent_tiles[NUM_PRISM_FACES][4]; /* Id of adjacent tiles, 6 faces, max of 4 neighbors per face */
+    int *current_tile;                       /* Current tile id */
 };
 
 /* option flags */

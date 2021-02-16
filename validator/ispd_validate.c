@@ -1814,8 +1814,11 @@ double score_accuracy()
     int ntiles = v_count(tile_list);
     for (int i = 0; i < ntiles; i += 1)
     {
-        double tile_score = score_tile_accuracy(tile_list[i], scale);
-        score += tile_score;
+        if (tile_list[i]->parent->is_empty == 0)
+        {
+            double tile_score = score_tile_accuracy(tile_list[i], scale);
+            score += tile_score;
+        }
     }
 
     if (opt.flags & RESOLUTION)
@@ -2133,7 +2136,18 @@ int main(int argc, char **argv)
             fatalif(res != 7, "%s: Invalid paramters for prism, need 7 integers", line);
         }
 
-        fatalif(p.resolution < 0, "%s: Invalid resolution, should be non negative integer", line);
+        fatalif(p.resolution < 0 && p.resolution != -1, "%s: Invalid resolution, should be non negative integer or -1 for empty prisms", line);
+
+        if (p.resolution == -1)
+        {
+            p.resolution = 0;
+            p.is_empty = 1;
+        }
+        else
+        {
+            p.is_empty = 0;
+        }
+
         for (int i = 0; i < dimension; i += 1)
         {
             fatalif(p.origin[i] < volume_bounds.low_bounds[i] ||
