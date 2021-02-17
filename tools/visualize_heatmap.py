@@ -104,7 +104,7 @@ def visualize_heatmap(filename: str, out: str, interpolate: bool):
 
         ncolors = 200
         c_arr = plt.get_cmap('gist_heat_r')(range(ncolors))
-        c_arr[:,-1] = np.linspace(0.0, 1.0, ncolors)
+        c_arr[0,-1] = 0
 
         map_obj = matplotlib.colors.LinearSegmentedColormap.from_list(name='alpha', colors=c_arr)
 
