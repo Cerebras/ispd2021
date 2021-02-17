@@ -102,7 +102,15 @@ def visualize_heatmap(filename: str, out: str, interpolate: bool):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
-        c_map = plt.get_cmap('gist_heat_r')
+        ncolors = 200
+        c_arr = plt.get_cmap('gist_heat_r')(range(ncolors))
+        c_arr[:,-1] = np.linspace(0.0, 1.0, ncolors)
+
+        map_obj = matplotlib.colors.LinearSegmentedColormap.from_list(name='alpha', colors=c_arr)
+
+        plt.register_cmap(cmap=map_obj)
+
+        c_map = plt.get_cmap('alpha')
         c_norm = matplotlib.colors.Normalize(vmin=np.min(c), vmax=np.max(c))
         scalar_map = matplotlib.cm.ScalarMappable(norm=c_norm, cmap=c_map)
 
