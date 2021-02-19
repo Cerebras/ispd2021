@@ -83,7 +83,7 @@ for i in range(1,16):
   ax.imshow(1-h3[:,i*N2//16,:].transpose(1,0),interpolation='nearest', extent=extent,cmap='gray')
   ax.set_xticks([], []) 
   ax.set_yticks([], []) 
-fig.savefig('torus_xz.png',dpi=200)
+fig.savefig(out_dir / 'torus_xz.png',dpi=200)
 plt.close()
 
 fig = plt.figure()
