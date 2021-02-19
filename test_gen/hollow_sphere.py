@@ -76,7 +76,7 @@ ax1.imshow(1-h2,interpolation='nearest', extent=extent,cmap='gray')
 fig.savefig(out_dir / 'ring.png',dpi=200)
 plt.close()
 
-with open(F"ring-{N}.in", mode='w') as f:
+with open(out_dir / F"ring-{N}.in", mode='w') as f:
   f.write('2\n')
   f.write(F'{N} {N}\n')
   f.write('800 1600\n')
