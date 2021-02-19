@@ -1,3 +1,14 @@
+'''
+Generates .in problem definition file for a 3D torus.
+Usage:
+python hollow_sphere.py [--N N] [--R R] [--r r] [--o OUT_DIR]
+
+> --N N : Indicates size of volume. Volume is assumed to be a rectangular prism with dimension (2N x 2N x N)
+> --R R : Indicates the radius of the overall torus
+> --r r : Indicates the radius of the ring girth of the torus
+> --o OUT_DIR : Indicates the directory to write output files
+'''
+
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')  # suppress Xterm invocation

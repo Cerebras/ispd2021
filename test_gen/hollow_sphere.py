@@ -1,3 +1,14 @@
+'''
+Generates .in problem definition files for a 2D ring and 3D hollow spheres.
+Usage:
+python hollow_sphere.py [--N N] [--r1 R1] [--r2 R2] [--o OUT_DIR]
+
+> --N N : Indicates size of volume. Volume is assumed to be a cube
+> --r1 R1 : Indicates the inner radius of the ring/hollow sphere
+> --r2 R2 : Indicates the outer radius of the ring/hollow sphere
+> --o OUT_DIR : Indicates the directory to write output files
+'''
+
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')  # suppress Xterm invocation
