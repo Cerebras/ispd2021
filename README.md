@@ -97,6 +97,8 @@ $ ./test.sh <validator> <feedback_dir> <suite> [test_case [additional_args]]
 - `gradient`: Models a linear gradient
     - `gradient_big`: Large 2D linear gradient 
     - `gradient_small`: Small 2D linear gradient
+- `hollow_sphere`: Models a hollow sphere
+    - `hollow_sphere-100`: Hollow sphere with dimensions 100x100x100
 - `mix`: Set of tests modeling a small 2D linear gradient with different solutions
     - `flat_gradient`: Flat solution to problem
     - `gradient_gradient`: Gradient solution to problem
@@ -109,6 +111,8 @@ $ ./test.sh <validator> <feedback_dir> <suite> [test_case [additional_args]]
     - `simple_3d`: Simple 3D test
 - `sphere`: Models a 3D sphere
     - `sphere`: 3D sphere with no adapters
+- `torus`: Models a 3D torus
+    - `torus-200`: A torus with dimensions 400x400x200
 ## File Formats
 There are two file formats which are important. Problem definitions use the `schema.in` format. Problem solutions us the `schema.out` format. Both allow for commenting out lines using a
 `#` at the beginning of the line being commented out.
