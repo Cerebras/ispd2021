@@ -616,6 +616,11 @@ tile_tree *build_tile_tree(tile ***tiles, struct prism *prisms, int nprims, int 
     {
         int prev_prism_tiles = ntiles;
         struct prism *prism = &prisms[i];
+
+        if (prism->is_empty)
+        {
+            continue;
+        }
         if (dimension == 2)
         {
             for (int x = 0; x < prism->shape[0]; x += 1)
@@ -646,28 +651,29 @@ tile_tree *build_tile_tree(tile ***tiles, struct prism *prisms, int nprims, int 
             }
         }
     }
-
-    // Sort tiles spatially for building tree
-    qsort(added_tiles, ntiles, sizeof(tile *), cmp_tiles);
-
-    // Create lowest level interior nodes
-    tile_node **interior_nodes = insert_tile(tree, added_tiles, ntiles);
-
-    // Build rest of interior nodes
-    for (; v_count(interior_nodes) > 1;)
+    if (v_count(added_tiles) > 0)
     {
-        tile_node **new_level = insert_tile_node(tree, interior_nodes, v_count(interior_nodes));
+        // Sort tiles spatially for building tree
+        qsort(added_tiles, ntiles, sizeof(tile *), cmp_tiles);
+
+        // Create lowest level interior nodes
+        tile_node **interior_nodes = insert_tile(tree, added_tiles, ntiles);
+
+        // Build rest of interior nodes
+        for (; v_count(interior_nodes) > 1;)
+        {
+            tile_node **new_level = insert_tile_node(tree, interior_nodes, v_count(interior_nodes));
+            v_free(interior_nodes);
+            interior_nodes = new_level;
+        }
+
+        tree->head = interior_nodes[0];
+
         v_free(interior_nodes);
-        interior_nodes = new_level;
+
+        // Sort tiles by id for later lookup
+        qsort(added_tiles, ntiles, sizeof(tile *), cmp_tiles_id);
     }
-
-    tree->head = interior_nodes[0];
-
-    v_free(interior_nodes);
-
-    // Sort tiles by id for later lookup
-    qsort(added_tiles, ntiles, sizeof(tile *), cmp_tiles_id);
-
     // Return added tiles in tiles pointer
     *tiles = added_tiles;
     return tree;
@@ -728,10 +734,10 @@ void build_connectivity()
     all_connections = calloc(1, sizeof(struct connectivity));
 
     int ntiles = v_count(tile_list);
-
     for (int i = 0; i < ntiles; i += 1)
     {
         tile *t = tile_list[i];
+
         int curr_tid = get_tile_id(t);
         int has_res_diff = 0;
         v_adjoin(all_connections->current_tile, curr_tid);
@@ -1017,6 +1023,10 @@ void validate_pe_fit()
     int expected_compute = 0;
     for (int i = 0; i < sol->nprims; i += 1)
     {
+        if (sol->prism[i].is_empty)
+        {
+            continue;
+        }
         int curr_pes = 1;
         for (int j = 0; j < dimension; j += 1)
         {
@@ -1222,27 +1232,6 @@ int validate_adapters()
     v_free(adapter_list);
 
     return success;
-}
-
-/* feasibility check:
- * nonoverlap 
- * full coverage 
- * required adapters are 1:2 or 2:1 only */
-int validate()
-{
-    validate_prism_overlap();
-    printf("[OK] - Overlap Validated\n");
-    validate_coverage();
-    printf("[OK] - Coverage Validated\n");
-    int adapters_good = validate_adapters();
-    if (adapters_good)
-    {
-        printf("[OK] - Connectivity Validated\n");
-        validate_pe_fit();
-        printf("[OK] - PE Fit Validated\n");
-    }
-
-    return adapters_good;
 }
 
 // Get the exact heatmap value in heatmap array at inputted coords (in heatmap space)
@@ -1902,6 +1891,85 @@ double score_wires()
     return pow(sum_1_5_norm, 1.0 / WIRE_POW);
 }
 
+void validate_empty_prisms()
+{
+    for (int i = 0; i < sol->nprims; i += 1)
+    {
+        struct prism *prism = &sol->prism[i];
+        if (!prism->is_empty)
+        {
+            continue;
+        }
+
+        tile *t = NULL;
+
+        if (dimension == 2)
+        {
+            for (int x = 0; x < prism->shape[0]; x += 1)
+            {
+                for (int y = 0; y < prism->shape[1]; y += 1)
+                {
+                    int coords[2] = {x, y};
+                    t = get_tile(prism, i, 0, coords);
+                    if (t != NULL)
+                    {
+                        node_bounds_d scaled = scale_tile_to_heatmap(t);
+                        double i2 = integrate_y(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], 0);
+
+                        fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, x, y, i2);
+                        free(t);
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (int x = 0; x < prism->shape[0]; x += 1)
+            {
+                for (int y = 0; y < prism->shape[1]; y += 1)
+                {
+                    for (int z = 0; z < prism->shape[2]; z += 1)
+                    {
+                        int coords[3] = {x, y, z};
+                        t = get_tile(prism, i, 0, coords);
+                        if (t != NULL)
+                        {
+                            node_bounds_d scaled = scale_tile_to_heatmap(t);
+                            double i2 = integrate_z(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], scaled.low_bounds[2], scaled.up_bounds[2]);
+
+                            fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, x, y, z, i2);
+                            free(t);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* feasibility check:
+ * nonoverlap 
+ * full coverage 
+ * required adapters are 1:2 or 2:1 only */
+int validate()
+{
+    validate_prism_overlap();
+    printf("[OK] - Overlap Validated\n");
+    validate_coverage();
+    printf("[OK] - Coverage Validated\n");
+    int adapters_good = validate_adapters();
+    if (adapters_good)
+    {
+        printf("[OK] - Connectivity Validated\n");
+        validate_pe_fit();
+        printf("[OK] - PE Fit Validated\n");
+        validate_empty_prisms();
+        printf("[OK] - Empty Prisms Validated\n");
+    }
+
+    return adapters_good;
+}
+
 // Compute the score of a solution
 double score_solution()
 {
@@ -2133,7 +2201,19 @@ int main(int argc, char **argv)
             fatalif(res != 7, "%s: Invalid paramters for prism, need 7 integers", line);
         }
 
-        fatalif(p.resolution < 0, "%s: Invalid resolution, should be non negative integer", line);
+        fatalif(p.resolution < 0 && p.resolution != -1, "%s: Invalid resolution, should be non negative integer or -1 for empty prisms", line);
+
+        if (p.resolution == -1)
+        {
+            // Use finest resolution to define prisms
+            p.resolution = 0;
+            p.is_empty = 1;
+        }
+        else
+        {
+            p.is_empty = 0;
+        }
+
         for (int i = 0; i < dimension; i += 1)
         {
             fatalif(p.origin[i] < volume_bounds.low_bounds[i] ||

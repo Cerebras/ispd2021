@@ -33,6 +33,9 @@ The directory structure is as follows:
         - Assuming a max resolution of 1.0, can solve for the actual resolution using `1.0 / (2 ^ resolution)`.
     - Origin: Defines the position of the lower bound corner of a prism in sampling space.
     - Shape: Defines dimensions of prism in size of tiles.
+    - A prism can be defined as **empty** which means that it is not used as a compute tile or scored in the solution
+        - These prisms are useful for ignoring empty space in a heatmap (i.e. zero target resolution) that do not need to be modeled
+        - These prisms can only enclose volumes that have zero target resolution on the heatmap
 - Tile ID: ID of a tile, based off of the ordering of prisms in the solution and the size of each prism. See the source code for how it is computed.
 
 ## Building the Executable
@@ -90,6 +93,9 @@ $ ./test.sh <validator> <feedback_dir> <suite> [test_case [additional_args]]
     - `box_small_solved`: Small 2D box with valid solution (adapters included)
 - `circle`: Models a 2D circle
     - `circle`: 2D circle with no adapters
+- `empty`: Solutions using empty prisms in model
+    - `empty_small`: Models a zero target resolution heatmap with empty prisms
+    - `empty_err`: Incorrectly models a non-zero target resolution heatmap with empty prisms
 - `flat`: Models a uniform space
     - `flat_big`: Large 3D uniform space
     - `flat_small`: Small 2D uniform space solved with several prisms
@@ -140,6 +146,8 @@ The following definition assumes no commented lines
     - For example, given a 2x2x2 volume and an inverse sampling step of 2. This means that in the sampling space, the sampling points take up a 4x4x4 volume where each unit is equivalent to 0.5 units of the problem volume.
 - Line 2 to X - 1: Each line defines a prism
     - Each line starts with a non-negative integer representing the resolution in the inverse logarithmic scale
+        - If this resolution is -1, then the prism is considered empty
+            - Empty prisms have a assumed resolution value of 0
     - For 2D points it is followed by two non-negative integers for the origin of the prism and two
     positive integers for the shape of the prism in tiles
     - For 3D points it is followed by three non-negative integers for the origin of the prism and three positive integers for the shape of the prism in tiles
