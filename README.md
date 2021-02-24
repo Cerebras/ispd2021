@@ -113,6 +113,7 @@ $ ./test.sh <validator> <feedback_dir> <suite> [test_case [additional_args]]
     - `sphere`: 3D sphere with no adapters
 - `torus`: Models a 3D torus
     - `torus-200`: A torus with dimensions 400x400x200
+        - This test is compressed and needs unzipped before use
 ## File Formats
 There are two file formats which are important. Problem definitions use the `schema.in` format. Problem solutions us the `schema.out` format. Both allow for commenting out lines using a
 `#` at the beginning of the line being commented out.
