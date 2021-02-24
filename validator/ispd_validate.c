@@ -1916,7 +1916,7 @@ void validate_empty_prisms()
                         node_bounds_d scaled = scale_tile_to_heatmap(t);
                         double i2 = integrate_y(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], 0);
 
-                        fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d cannot be empty. It encloses a non-empty target resolution %f", i, i2);
+                        fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, x, y, i2);
                         free(t);
                     }
                 }
@@ -1937,7 +1937,7 @@ void validate_empty_prisms()
                             node_bounds_d scaled = scale_tile_to_heatmap(t);
                             double i2 = integrate_z(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], scaled.low_bounds[2], scaled.up_bounds[2]);
 
-                            fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d cannot be empty. It encloses a non-empty target resolution %f", i, i2);
+                            fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, x, y, z, i2);
                             free(t);
                         }
                     }

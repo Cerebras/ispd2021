@@ -1,6 +1,8 @@
 #define NDIM 3 /* 2 or 3 */
 #define NUM_PRISM_FACES (NDIM == 3 ? 6 : 4)
 
+#include <stdbool.h>
+
 /* [ ] problem specific parameters, the defining cost landscape */
 struct costparams
 {
@@ -33,7 +35,7 @@ struct pt
 struct prism
 {
     int resolution;   /* log2 of spacing between adjecent gridpoints */
-    int is_empty;     /* is this prism considered empty */
+    bool is_empty;     /* is this prism considered empty */
     int origin[NDIM]; /* prism's origin designated using the finest resolution coordinates  (sampling space)    */
     int shape[NDIM];  /* prism's dimensions in units of tiles */
 };
