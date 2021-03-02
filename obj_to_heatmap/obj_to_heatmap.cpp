@@ -198,7 +198,7 @@ double distance2ToRectangle(const Vec3 &origin, const Vec3 &dim, const Vec3 &poi
     return dist;
 }
 
-double AABB::distance2To(const Vec3 &point)
+double AABB::distance2To(const Vec3 &point) const
 {
     double dist = -1;
     Vec3 origin;
@@ -327,6 +327,114 @@ double AABB::distance2To(const Vec3 &point)
     return dist;
 }
 
+double intersectPlane(const Vec3 &norm, double D, const Vec3 &origin, const Vec3 &direction)
+{
+    double constant = dot(norm, origin);
+    double coeff = dot(norm, direction);
+    // Need to avoid divide by 0 (parallel plane and ray)
+    if (std::abs(coeff) > 0)
+    {
+        return (-D - constant) / coeff;
+    }
+    return -1;
+}
+
+bool AABB::intersects(const Vec3 &origin, const Vec3 &direction) const
+{
+    // Plane equation: Ax + By + Cz + D = 0
+    // Line equation: O + tV
+    Vec3 norm; // Normal of face = (A, B, C)
+    double D;
+    Vec3 planePoint;
+    // norm * line = norm * origin + t * norm * direction
+    double t;
+
+    planePoint = max; // Use this for front top right
+    // Front Face norm = (0, 0, 1)
+    norm = {0, 0, 1};
+    D = -(dot(norm, planePoint));
+    t = intersectPlane(norm, D, origin, direction);
+    if (t > 0)
+    {
+        Vec3 point = origin + t * direction;
+        // Check if in bounds
+        if (point.x <= max.x && point.x >= min.x && point.y <= max.y && point.y >= min.y)
+        {
+            return true;
+        }
+    }
+    // Right Face norm = (1, 0, 0)
+    norm = {1, 0, 0};
+    D = -(dot(norm, planePoint));
+    t = intersectPlane(norm, D, origin, direction);
+    if (t > 0)
+    {
+        Vec3 point = origin + t * direction;
+        // Check if in bounds
+        if (point.y <= max.y && point.y >= min.y && point.z <= max.z && point.z >= min.z)
+        {
+            // If not intersects, just set closest directly
+            return true;
+        }
+    }
+    // Top Face norm = (0, 1, 0)
+    norm = {0, 1, 0};
+    D = -(dot(norm, planePoint));
+    t = intersectPlane(norm, D, origin, direction);
+    if (t > 0)
+    {
+        Vec3 point = origin + t * direction;
+        // Check if in bounds
+        if (point.x <= max.x && point.x >= min.x && point.z <= max.z && point.z >= min.z)
+        {
+            return true;
+        }
+    }
+
+    planePoint = min; // Use this for back, bottom, left
+    // Back Face norm = (0, 0, -1)
+    norm = {0, 0, -1};
+    D = -(dot(norm, planePoint));
+    t = intersectPlane(norm, D, origin, direction);
+    if (t > 0)
+    {
+        Vec3 point = origin + t * direction;
+        // Check if in bounds
+        if (point.x <= max.x && point.x >= min.x && point.y <= max.y && point.y >= min.y)
+        {
+            return true;
+        }
+    }
+    // Left Face norm = (-1, 0, 0)
+    norm = {-1, 0, 0};
+    D = -(dot(norm, planePoint));
+    t = intersectPlane(norm, D, origin, direction);
+    if (t > 0)
+    {
+        Vec3 point = origin + t * direction;
+        // Check if in bounds
+        if (point.y <= max.y && point.y >= min.y && point.z <= max.z && point.z >= min.z)
+        {
+            return true;
+        }
+    }
+    // Bottom Face y = 0 norm = (0, -1, 0)
+    norm = {0, -1, 0};
+    D = -(dot(norm, planePoint));
+    t = intersectPlane(norm, D, origin, direction);
+    if (t > 0)
+    {
+        Vec3 point = origin + t * direction;
+        // Check if in bounds
+        if (point.x <= max.x && point.x >= min.x && point.z <= max.z && point.z >= min.z)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 Triangle::Triangle(Vec3 *verts, Vec3 *norms)
 {
     for (int i = 0; i < 3; i += 1)
@@ -347,11 +455,9 @@ Triangle::Triangle(Vec3 *verts, Vec3 *norms)
     }
     v_0_2 = verts[2] - verts[0];
     v_0_1 = verts[1] - verts[0];
-        std::cout << v_0_1 << v_0_2 << std::endl;
-
 }
 
-double Triangle::distance2To(const Vec3 &point)
+double Triangle::distance2To(const Vec3 &point) const
 {
     // Adapted from https://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
 
@@ -565,18 +671,50 @@ double Triangle::distance2To(const Vec3 &point)
 
     Vec3 closest_point = verts[0] + s * v_0_1 + t * v_0_2;
     double dist = length2(closest_point - point);
-    std::cout << "Point: " << point << "\nClosest: " << closest_point << "\nDist: " << dist << std::endl;
-    std::cout << "S: " << s << "\nT: " << t << std::endl;
-    std::cout << "E0: " << v_0_1 << "\nE1: " << v_0_2 << std::endl;
 
     return dist;
 }
 
-bool Triangle::inFront(const Vec3 &point)
+bool Triangle::inFront(const Vec3 &point) const
 {
     Vec3 dir = point - verts[0];
 
-    return dot(dir, norms[0]) >= 0;
+    Vec3 norm = cross(v_0_1, v_0_2);
+
+    return dot(dir, norm) >= 0;
+}
+
+bool Triangle::intersects(const Vec3 &origin, const Vec3 &dir) const
+{
+    Vec3 v_1_3 = verts[2] - verts[0];
+    Vec3 v_1_2 = verts[1] - verts[0];
+    // Intersection code dapted from Tomas Möller & Ben Trumbore (1997): Fast, Minimum Storage
+    // Ray-Triangle Intersection, Journal of Graphics Tools, 2:1, 21-28
+    Vec3 T = origin - verts[0];
+    Vec3 dirCrossV13 = cross(dir, v_1_3);
+    Vec3 TCrossV12 = cross(T, v_1_2);
+    double dividend = dot(dirCrossV13, v_1_2);
+    if (dividend > 0)
+    {
+        double invDiv = 1.0 / dividend;
+        // Need to check that barycentric coordinates are valid
+        double u = dot(dirCrossV13, T) * invDiv;
+        if (u >= 0)
+        {
+            double v = dot(TCrossV12, dir) * invDiv;
+            if (v >= 0 && u + v <= 1)
+            {
+                double t = dot(TCrossV12, v_1_3) * invDiv;
+
+                if (t > 0)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 Node::Node() : children{}, data{nullptr}, bounds{} {}
@@ -591,7 +729,7 @@ Node::~Node()
     }
 }
 
-double Node::distance2To(const Vec3 &point, double best)
+double Node::distance2To(const Vec3 &point, double best) const
 {
     if (data == nullptr)
     {
@@ -622,6 +760,26 @@ double Node::distance2To(const Vec3 &point, double best)
     return best;
 }
 
+int Node::intersects(const Vec3 &point, const Vec3 &dir) const
+{
+    if (data == nullptr)
+    {
+        int num = 0;
+        for (auto child : children)
+        {
+            if (child->bounds.intersects(point, dir))
+            {
+                num += child->intersects(point, dir);
+            }
+        }
+        return num;
+    }
+    else
+    {
+        return data->intersects(point, dir) ? 1 : 0;
+    }
+}
+
 Tree::Tree() : head{nullptr} {}
 Tree::~Tree()
 {
@@ -640,7 +798,7 @@ void updateHeight(Node *node, int height)
     }
 }
 
-void Tree::build(const std::vector<Triangle*> &data, int max_children)
+void Tree::build(const std::vector<Triangle *> &data, int max_children)
 {
     std::vector<Node *> level;
 
@@ -714,7 +872,7 @@ void Tree::build(const std::vector<Triangle*> &data, int max_children)
     updateHeight(head, height);
 }
 
-double Tree::distance2To(const Vec3 &point)
+double Tree::distance2To(const Vec3 &point) const
 {
     if (head == nullptr)
     {
@@ -722,6 +880,17 @@ double Tree::distance2To(const Vec3 &point)
     }
     double best = head->distance2To(point, -1);
     return best;
+}
+
+bool Tree::isInside(const Vec3 &point) const
+{
+    if (head == nullptr)
+    {
+        return true;
+    }
+
+    int intersects = head->intersects(point, Vec3{1, 0, 0});
+    return (intersects & 1) != 0;
 }
 
 Mesh::Mesh(const std::string &filename)
@@ -870,8 +1039,10 @@ Mesh::Mesh(const std::string &filename)
     }
 }
 
-Mesh::~Mesh() {
-    for (auto tri : triangles) {
+Mesh::~Mesh()
+{
+    for (auto tri : triangles)
+    {
         delete tri;
     }
 }
@@ -909,27 +1080,176 @@ std::ostream &operator<<(std::ostream &out, const Tree &tree)
     return out << *(tree.head);
 }
 
+double *sample_heatmap(const Tree &tree, Vec3 volume, Vec3 offset, Vec3 inv_sampling_step, double scale, double min_threshold)
+{
+    int inv_x = (int)inv_sampling_step.x;
+    int inv_y = (int)inv_sampling_step.y;
+    int inv_z = (int)inv_sampling_step.z;
+
+    double *heatmap = new double[inv_x * inv_y * inv_z];
+    Vec3 sampling_step = volume;
+    sampling_step.x /= inv_x;
+    sampling_step.y /= inv_y;
+    sampling_step.z /= inv_z;
+
+    for (int i = 0; i < inv_z; i += 1)
+    {
+        for (int j = 0; j < inv_y; j += 1)
+        {
+            for (int k = 0; k < inv_x; k += 1)
+            {
+                Vec3 point;
+                point.x = sampling_step.x * k;
+                point.y = sampling_step.y * j;
+                point.z = sampling_step.z * i;
+
+                point += offset;
+
+                double value = 0.0;
+                // if (!tree.isInside(point))
+                // {
+                //     value = tree.distance2To(point);
+
+                //     if (value < 0.0)
+                //     {
+                //         value = 0.0;
+                //     }
+                //     else
+                //     {
+                //         value = scale / value;
+
+                //         if (value > 1.0)
+                //         {
+                //             value = 1.0;
+                //         }
+
+                //         if (value < min_threshold)
+                //         {
+                //             value = 0.0;
+                //         }
+                //     }
+                // }
+                if (tree.isInside(point)) {
+                    value = 1.0;
+                }
+                heatmap[i * inv_x * inv_y + j * inv_x + k] = value;
+            }
+        }
+    }
+
+    return heatmap;
+}
+
+double *sample_heatmap_naive(const Mesh &mesh, Vec3 volume, Vec3 offset, Vec3 inv_sampling_step, double scale, double min_threshold)
+{
+    int inv_x = (int)inv_sampling_step.x;
+    int inv_y = (int)inv_sampling_step.y;
+    int inv_z = (int)inv_sampling_step.z;
+
+    double *heatmap = new double[inv_x * inv_y * inv_z];
+    Vec3 sampling_step = volume;
+    sampling_step.x /= inv_x;
+    sampling_step.y /= inv_x;
+    sampling_step.z /= inv_x;
+
+    for (int i = 0; i < inv_z; i += 1)
+    {
+        for (int j = 0; j < inv_y; j += 1)
+        {
+            for (int k = 0; k < inv_x; k += 1)
+            {
+                Vec3 point;
+                point.x = sampling_step.x * k;
+                point.y = sampling_step.y * j;
+                point.z = sampling_step.z * i;
+
+                point += offset;
+
+                double value = -1;
+
+                for (int n = 0; n < mesh.triangles.size(); n += 1)
+                {
+                    double curr_val = mesh.triangles[n]->distance2To(point);
+                    if (value < 0 || (curr_val > 0 && curr_val < value))
+                    {
+                        value = curr_val;
+                    }
+                }
+
+                if (value < 0.0)
+                {
+                    value = 0.0;
+                }
+                else
+                {
+                    value = scale / value;
+
+                    if (value > 1.0)
+                    {
+                        value = 1.0;
+                    }
+
+                    if (value < min_threshold)
+                    {
+                        value = 0.0;
+                    }
+                }
+                heatmap[i * inv_x * inv_y + j * inv_x + k] = value;
+            }
+        }
+    }
+
+    return heatmap;
+}
+
+// ./obj_to_heatmap filename inv_sampling_step scale min max sample_scale
 int main(int argc, char **argv)
 {
-    if (argc >= 2)
+    if (argc >= 5)
     {
         std::string file_name(argv[1]);
+
+        double inv_sampling_step = std::stoi(argv[2]);
+        double scale = std::stod(argv[3]);
+        double min = std::stod(argv[4]);
+        double sample_scale = std::stod(argv[5]);
 
         Mesh mesh(file_name);
 
         Tree tree;
         tree.build(mesh.triangles, 5);
 
-        std::cout << "Min: " << tree.head->bounds.min << "\nMax: " << tree.head->bounds.max << std::endl;
-        double dist = tree.distance2To(Vec3{100, 100, 100});
-        std::cout << dist << std::endl;
+        Vec3 bounds = tree.head->bounds.max - tree.head->bounds.min;
+        double max_bounds = std::max(std::max(bounds.x, bounds.y), bounds.z);
+
+        Vec3 volume = scale * Vec3{max_bounds, max_bounds, max_bounds};
+        Vec3 offset = tree.head->bounds.min - 0.25 * volume;
+
+        Vec3 inv_ss = inv_sampling_step * volume;
+
+        int inv_x = (int)inv_ss.x;
+        int inv_y = (int)inv_ss.y;
+        int inv_z = (int)inv_ss.z;
+
+        //double *heatmap = sample_heatmap(tree, volume, offset, inv_ss, scale, min);
+        double *heatmap = sample_heatmap(tree, volume, offset, inv_ss, sample_scale, min);
+
+        std::size_t extention = file_name.find_last_of(".");
+        std::string out_file_name = file_name.substr(0, extention) + ".in";
+        std::ofstream out_file;
+
+        out_file.open(out_file_name);
+
+        out_file << "3\n";
+        out_file << inv_x - 1 << ' ' << inv_y - 1 << ' ' << inv_z - 1 << '\n';
+        out_file << "400 400\n";
+        out_file << "0.5 0.5\n";
+        for (int i = 0; i < inv_x * inv_y * inv_z; i += 1)
+        {
+            out_file << heatmap[i] << '\n';
+        }
+        out_file.close();
+
+        delete[] heatmap;
     }
-
-    // AABB bounds;
-    // bounds.min = Vec3{0, 0, 0};
-    // bounds.max = Vec3{1, 1, 1};
-
-    // std::cout << bounds.distance2To(Vec3{0, 2, 0}) << std::endl;
-    // std::cout << bounds.distance2To(Vec3{1, 1, 1}) << std::endl;
-    // std::cout << bounds.distance2To(Vec3{1, 3, 1}) << std::endl;
 }

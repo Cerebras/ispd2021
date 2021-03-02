@@ -28,7 +28,8 @@ struct AABB
     Vec3 min;
     Vec3 max;
 
-    double distance2To(const Vec3 &point);
+    double distance2To(const Vec3 &point) const;
+    bool intersects(const Vec3& origin, const Vec3& direction) const;
 
     AABB &operator+=(const AABB &rhs);
     friend AABB operator+(AABB lhs, const AABB &rhs);
@@ -53,8 +54,10 @@ public:
     AABB bounds;
 
     Triangle(Vec3 *verts, Vec3 *norms = nullptr);
-    double distance2To(const Vec3 &point);
-    bool inFront(const Vec3 &point);
+    double distance2To(const Vec3 &point) const;
+    bool inFront(const Vec3 &point) const;
+
+    bool intersects(const Vec3& origin, const Vec3& dir) const;
 
     friend std::ostream &operator<<(std::ostream &out, const Triangle &mesh);
 };
@@ -67,7 +70,8 @@ struct Node
     AABB bounds;
     Node();
     ~Node();
-    double distance2To(const Vec3 &point, double best);
+    double distance2To(const Vec3 &point, double best) const;
+    int intersects(const Vec3 &point, const Vec3& dir) const;
 
     friend std::ostream &operator<<(std::ostream &out, const Node &node);
 };
@@ -77,8 +81,10 @@ struct Tree
     Node *head;
     Tree();
     ~Tree();
-    void build(const std::vector<Triangle*> &data, int max_children);
-    double distance2To(const Vec3 &point);
+    void build(const std::vector<Triangle *> &data, int max_children);
+    double distance2To(const Vec3 &point) const;
+
+    bool isInside(const Vec3 &point) const;
 
     friend std::ostream &operator<<(std::ostream &out, const Tree &tree);
 };
@@ -92,7 +98,7 @@ struct Mesh
 
     std::vector<Vec3> norms;
 
-    std::vector<Triangle*> triangles;
+    std::vector<Triangle *> triangles;
 
     Mesh(const std::string &filename);
     ~Mesh();
