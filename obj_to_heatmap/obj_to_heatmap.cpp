@@ -686,25 +686,23 @@ bool Triangle::inFront(const Vec3 &point) const
 
 bool Triangle::intersects(const Vec3 &origin, const Vec3 &dir) const
 {
-    Vec3 v_1_3 = verts[2] - verts[0];
-    Vec3 v_1_2 = verts[1] - verts[0];
     // Intersection code dapted from Tomas Möller & Ben Trumbore (1997): Fast, Minimum Storage
     // Ray-Triangle Intersection, Journal of Graphics Tools, 2:1, 21-28
     Vec3 T = origin - verts[0];
-    Vec3 dirCrossV13 = cross(dir, v_1_3);
-    Vec3 TCrossV12 = cross(T, v_1_2);
-    double dividend = dot(dirCrossV13, v_1_2);
-    if (dividend > 0)
+    Vec3 dirCrossV02 = cross(dir, v_0_2);
+    Vec3 TCrossV01 = cross(T, v_0_1);
+    double dividend = dot(dirCrossV02, v_0_1);
+    if (dividend > 0.000000001)
     {
         double invDiv = 1.0 / dividend;
         // Need to check that barycentric coordinates are valid
-        double u = dot(dirCrossV13, T) * invDiv;
+        double u = dot(dirCrossV02, T) * invDiv;
         if (u >= 0)
         {
-            double v = dot(TCrossV12, dir) * invDiv;
+            double v = dot(TCrossV01, dir) * invDiv;
             if (v >= 0 && u + v <= 1)
             {
-                double t = dot(TCrossV12, v_1_3) * invDiv;
+                double t = dot(TCrossV01, v_0_2) * invDiv;
 
                 if (t > 0)
                 {
@@ -747,13 +745,10 @@ double Node::distance2To(const Vec3 &point, double best) const
     }
     else
     {
-        if (data->inFront(point))
+        double curr_dist = data->distance2To(point);
+        if (best < 0 || (curr_dist >= 0 && curr_dist < best))
         {
-            double curr_dist = data->distance2To(point);
-            if (best < 0 || (curr_dist >= 0 && curr_dist < best))
-            {
-                best = curr_dist;
-            }
+            best = curr_dist;
         }
     }
 
@@ -889,7 +884,7 @@ bool Tree::isInside(const Vec3 &point) const
         return true;
     }
 
-    int intersects = head->intersects(point, Vec3{1, 0, 0});
+    int intersects = head->intersects(point, Vec3{0, 1, 0});
     return (intersects & 1) != 0;
 }
 
@@ -1106,32 +1101,33 @@ double *sample_heatmap(const Tree &tree, Vec3 volume, Vec3 offset, Vec3 inv_samp
                 point += offset;
 
                 double value = 0.0;
-                // if (!tree.isInside(point))
-                // {
-                //     value = tree.distance2To(point);
+                //if (!tree.isInside(point))
+                {
+                    value = tree.distance2To(point);
 
-                //     if (value < 0.0)
-                //     {
-                //         value = 0.0;
-                //     }
-                //     else
-                //     {
-                //         value = scale / value;
+                    if (value < 0.0)
+                    {
+                        value = 0.0;
+                    }
+                    else
+                    {
+                        value = scale / value;
 
-                //         if (value > 1.0)
-                //         {
-                //             value = 1.0;
-                //         }
+                        if (value > 1.0)
+                        {
+                            value = 1.0;
+                        }
 
-                //         if (value < min_threshold)
-                //         {
-                //             value = 0.0;
-                //         }
-                //     }
-                // }
-                if (tree.isInside(point)) {
-                    value = 1.0;
+                        if (value < min_threshold)
+                        {
+                            value = 0.0;
+                        }
+                    }
                 }
+                // if (tree.isInside(point))
+                // {
+                //     value = 1.0;
+                // }
                 heatmap[i * inv_x * inv_y + j * inv_x + k] = value;
             }
         }
@@ -1223,7 +1219,11 @@ int main(int argc, char **argv)
         double max_bounds = std::max(std::max(bounds.x, bounds.y), bounds.z);
 
         Vec3 volume = scale * Vec3{max_bounds, max_bounds, max_bounds};
-        Vec3 offset = tree.head->bounds.min - 0.25 * volume;
+        Vec3 offset = tree.head->bounds.min;
+
+        if (scale > 1) {
+            offset -= (scale - 1) / 4.0 * volume;
+        }
 
         Vec3 inv_ss = inv_sampling_step * volume;
 
