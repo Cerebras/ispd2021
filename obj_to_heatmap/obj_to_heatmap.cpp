@@ -4,6 +4,8 @@
 #include <math.h>
 #include <algorithm>
 
+#define DOUBLE_EPSILON 0.00000000000001
+
 Vec3 &Vec3::operator+=(const Vec3 &rhs)
 {
     x += rhs.x;
@@ -98,8 +100,11 @@ double length2(const Vec3 &vec)
 
 AABB &AABB::operator+=(const AABB &rhs)
 {
-    this->min = ::min(this->min, rhs.min);
-    this->max = ::max(this->max, rhs.max);
+    this->min = ::min(::min(this->min, rhs.min), rhs.max);
+    this->max = ::max(::max(this->max, rhs.max), rhs.min);
+    this->min = ::min(this->min, this->max);
+    this->max = ::max(this->min, this->max);
+
     return *this;
 }
 
@@ -116,7 +121,7 @@ double distance2ToRectangle(const Vec3 &origin, const Vec3 &dim, const Vec3 &poi
     double e_0, e_1;
     double x_0, x_1, x_2;
 
-    if (dim.x < 0.00001)
+    if (dim.x < DOUBLE_EPSILON)
     {
         // rectangle is y, z
         e_0 = dim.y;
@@ -126,7 +131,7 @@ double distance2ToRectangle(const Vec3 &origin, const Vec3 &dim, const Vec3 &poi
         x_1 = point.z - origin.z;
         x_2 = point.x - origin.x;
     }
-    else if (dim.y < 0.00001)
+    else if (dim.y < DOUBLE_EPSILON)
     {
         // rectangle is x, z
         e_0 = dim.x;
@@ -345,14 +350,12 @@ bool AABB::intersects(const Vec3 &origin, const Vec3 &direction) const
     // Line equation: O + tV
     Vec3 norm; // Normal of face = (A, B, C)
     double D;
-    Vec3 planePoint;
     // norm * line = norm * origin + t * norm * direction
     double t;
 
-    planePoint = max; // Use this for front top right
     // Front Face norm = (0, 0, 1)
-    norm = {0, 0, 1};
-    D = -(dot(norm, planePoint));
+    norm = Vec3{0, 0, 1};
+    D = -(dot(norm, max));
     t = intersectPlane(norm, D, origin, direction);
     if (t > 0)
     {
@@ -364,8 +367,8 @@ bool AABB::intersects(const Vec3 &origin, const Vec3 &direction) const
         }
     }
     // Right Face norm = (1, 0, 0)
-    norm = {1, 0, 0};
-    D = -(dot(norm, planePoint));
+    norm = Vec3{1, 0, 0};
+    D = -(dot(norm, max));
     t = intersectPlane(norm, D, origin, direction);
     if (t > 0)
     {
@@ -378,8 +381,8 @@ bool AABB::intersects(const Vec3 &origin, const Vec3 &direction) const
         }
     }
     // Top Face norm = (0, 1, 0)
-    norm = {0, 1, 0};
-    D = -(dot(norm, planePoint));
+    norm = Vec3{0, 1, 0};
+    D = -(dot(norm, max));
     t = intersectPlane(norm, D, origin, direction);
     if (t > 0)
     {
@@ -391,10 +394,9 @@ bool AABB::intersects(const Vec3 &origin, const Vec3 &direction) const
         }
     }
 
-    planePoint = min; // Use this for back, bottom, left
     // Back Face norm = (0, 0, -1)
-    norm = {0, 0, -1};
-    D = -(dot(norm, planePoint));
+    norm = Vec3{0, 0, -1};
+    D = -(dot(norm, min));
     t = intersectPlane(norm, D, origin, direction);
     if (t > 0)
     {
@@ -406,8 +408,8 @@ bool AABB::intersects(const Vec3 &origin, const Vec3 &direction) const
         }
     }
     // Left Face norm = (-1, 0, 0)
-    norm = {-1, 0, 0};
-    D = -(dot(norm, planePoint));
+    norm = Vec3{-1, 0, 0};
+    D = -(dot(norm, min));
     t = intersectPlane(norm, D, origin, direction);
     if (t > 0)
     {
@@ -419,8 +421,8 @@ bool AABB::intersects(const Vec3 &origin, const Vec3 &direction) const
         }
     }
     // Bottom Face y = 0 norm = (0, -1, 0)
-    norm = {0, -1, 0};
-    D = -(dot(norm, planePoint));
+    norm = Vec3{0, -1, 0};
+    D = -(dot(norm, min));
     t = intersectPlane(norm, D, origin, direction);
     if (t > 0)
     {
@@ -692,19 +694,19 @@ bool Triangle::intersects(const Vec3 &origin, const Vec3 &dir) const
     Vec3 dirCrossV02 = cross(dir, v_0_2);
     Vec3 TCrossV01 = cross(T, v_0_1);
     double dividend = dot(dirCrossV02, v_0_1);
-    if (dividend > 0.000000001)
+    if (std::abs(dividend) > DOUBLE_EPSILON)
     {
         double invDiv = 1.0 / dividend;
         // Need to check that barycentric coordinates are valid
         double u = dot(dirCrossV02, T) * invDiv;
-        if (u >= 0)
+        if (u >= 0 && u <= 1.0)
         {
             double v = dot(TCrossV01, dir) * invDiv;
-            if (v >= 0 && u + v <= 1)
+            if (v >= 0 && u + v <= 1.0)
             {
                 double t = dot(TCrossV01, v_0_2) * invDiv;
 
-                if (t > 0)
+                if (t > DOUBLE_EPSILON)
                 {
                     return true;
                 }
@@ -884,8 +886,8 @@ bool Tree::isInside(const Vec3 &point) const
         return true;
     }
 
-    int intersects = head->intersects(point, Vec3{0, 1, 0});
-    return (intersects & 1) != 0;
+    int intersects = head->intersects(point, Vec3{1, 0, 0});
+    return intersects % 2 != 0;
 }
 
 Mesh::Mesh(const std::string &filename)
@@ -1101,7 +1103,7 @@ double *sample_heatmap(const Tree &tree, Vec3 volume, Vec3 offset, Vec3 inv_samp
                 point += offset;
 
                 double value = 0.0;
-                //if (!tree.isInside(point))
+                if (!tree.isInside(point))
                 {
                     value = tree.distance2To(point);
 
@@ -1124,10 +1126,11 @@ double *sample_heatmap(const Tree &tree, Vec3 volume, Vec3 offset, Vec3 inv_samp
                         }
                     }
                 }
-                // if (tree.isInside(point))
-                // {
+
+                // if (tree.isInside(point)) {
                 //     value = 1.0;
                 // }
+
                 heatmap[i * inv_x * inv_y + j * inv_x + k] = value;
             }
         }
@@ -1198,7 +1201,7 @@ double *sample_heatmap_naive(const Mesh &mesh, Vec3 volume, Vec3 offset, Vec3 in
     return heatmap;
 }
 
-// ./obj_to_heatmap filename inv_sampling_step scale min max sample_scale
+// ./obj_to_heatmap filename inv_sampling_step min sample_scale
 int main(int argc, char **argv)
 {
     if (argc >= 5)
@@ -1206,9 +1209,9 @@ int main(int argc, char **argv)
         std::string file_name(argv[1]);
 
         double inv_sampling_step = std::stoi(argv[2]);
-        double scale = std::stod(argv[3]);
-        double min = std::stod(argv[4]);
-        double sample_scale = std::stod(argv[5]);
+        double scale = 2;
+        double min = std::stod(argv[3]);
+        double sample_scale = std::stod(argv[4]);
 
         Mesh mesh(file_name);
 
@@ -1220,10 +1223,7 @@ int main(int argc, char **argv)
 
         Vec3 volume = scale * Vec3{max_bounds, max_bounds, max_bounds};
         Vec3 offset = tree.head->bounds.min;
-
-        if (scale > 1) {
-            offset -= (scale - 1) / 4.0 * volume;
-        }
+        offset -= (scale - 1) / 4.0 * volume;
 
         Vec3 inv_ss = inv_sampling_step * volume;
 
