@@ -1728,18 +1728,17 @@ double find_max_overshoot(struct tile *t)
 double find_max_scale()
 {
     int ntiles = v_count(tile_list);
-    double max_overshoot = 0;
     double max_scale = 1.0;
 
     for (int i = 0; i < ntiles; i += 1)
     {
         double curr_overshoot = find_max_overshoot(tile_list[i]);
-        if (curr_overshoot > max_overshoot)
+        // curr_overshoot = target_res - sol_res => scale = curr_overshoot/sol_res + 1
+        double sol_res = 1.0 / pow(2, tile_list[i]->parent->resolution);
+        double curr_scale = 1.0 + curr_overshoot / sol_res;
+        if (curr_scale > max_scale)
         {
-            // curr_overshoot = target_res - sol_res => scale = curr_overshoot/sol_res + 1
-            double sol_res = 1.0 / pow(2, tile_list[i]->parent->resolution);
-            max_scale = 1.0 + curr_overshoot / sol_res;
-            max_overshoot = curr_overshoot;
+            max_scale = curr_scale;
         }
     }
 
