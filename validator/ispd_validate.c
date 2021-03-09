@@ -1679,18 +1679,18 @@ double find_max_overshoot_z(double x_low, double x_high, double y_low, double y_
     return max_overshoot;
 }
 
-// Convert tile node bounds from sampling space to heatmap space
-node_bounds_d scale_tile_to_heatmap(struct tile *t)
+// Convert node bounds from sampling space to heatmap space
+node_bounds_d scale_bounds_to_heatmap(node_bounds bounds)
 {
     node_bounds_d scaled;
 
     for (int i = 0; i < dimension; i += 1)
     {
-        double low = (double)t->bounds.low_bounds[i] / sol->inv_sampling_step;
+        double low = (double)bounds.low_bounds[i] / sol->inv_sampling_step;
         low = min_d(low, prob->volume_shape[i]);
         low = max_d(low, 0.0);
 
-        double high = ((double)t->bounds.up_bounds[i] + 1.0) / sol->inv_sampling_step;
+        double high = ((double)bounds.up_bounds[i] + 1.0) / sol->inv_sampling_step;
         high = min_d(high, prob->volume_shape[i]);
         high = max_d(high, 0);
 
@@ -1699,6 +1699,12 @@ node_bounds_d scale_tile_to_heatmap(struct tile *t)
     }
 
     return scaled;
+}
+
+// Convert tile node bounds from sampling space to heatmap space
+node_bounds_d scale_tile_to_heatmap(struct tile *t)
+{
+    return scale_bounds_to_heatmap(t->bounds);
 }
 
 // Finds the max overshoot related to a single tile
@@ -1900,48 +1906,26 @@ void validate_empty_prisms()
             continue;
         }
 
-        tile *t = NULL;
+        node_bounds prism_bounds;
+        for (int i = 0; i < dimension; i += 1)
+        {
+            prism_bounds.low_bounds[i] = prism->origin[i];
+            prism_bounds.up_bounds[i] = prism->origin[i] + ((prism->shape[i] * prob->gridpoints_per_tile_edge) << prism->resolution) - 1;
+        }
 
         if (dimension == 2)
         {
-            for (int x = 0; x < prism->shape[0]; x += 1)
-            {
-                for (int y = 0; y < prism->shape[1]; y += 1)
-                {
-                    int coords[2] = {x, y};
-                    t = get_tile(prism, i, 0, coords);
-                    if (t != NULL)
-                    {
-                        node_bounds_d scaled = scale_tile_to_heatmap(t);
-                        double i2 = integrate_y(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], 0);
+            node_bounds_d scaled = scale_bounds_to_heatmap(prism_bounds);
+            double i2 = integrate_y(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], 0);
 
-                        fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, x, y, i2);
-                        free(t);
-                    }
-                }
-            }
+            fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, (int)scaled.low_bounds[0], (int)scaled.low_bounds[1], i2);
         }
         else
         {
-            for (int x = 0; x < prism->shape[0]; x += 1)
-            {
-                for (int y = 0; y < prism->shape[1]; y += 1)
-                {
-                    for (int z = 0; z < prism->shape[2]; z += 1)
-                    {
-                        int coords[3] = {x, y, z};
-                        t = get_tile(prism, i, 0, coords);
-                        if (t != NULL)
-                        {
-                            node_bounds_d scaled = scale_tile_to_heatmap(t);
-                            double i2 = integrate_z(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], scaled.low_bounds[2], scaled.up_bounds[2]);
+            node_bounds_d scaled = scale_bounds_to_heatmap(prism_bounds);
+            double i2 = integrate_z(scaled.low_bounds[0], scaled.up_bounds[0], scaled.low_bounds[1], scaled.up_bounds[1], scaled.low_bounds[2], scaled.up_bounds[2]);
 
-                            fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, x, y, z, i2);
-                            free(t);
-                        }
-                    }
-                }
-            }
+            fatalif(abs_d(i2) > DOUBLE_EPSILON, "Prism %d at coord (%d, %d, %d) cannot be empty. It encloses a non-empty target resolution %f", i, (int)scaled.low_bounds[0], (int)scaled.low_bounds[1], (int)scaled.low_bounds[2], i2);
         }
     }
 }
