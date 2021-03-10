@@ -1960,27 +1960,22 @@ double score_solution()
     double wires = score_wires();
 
     int max_tiles = prob->fabric_shape[0] * prob->fabric_shape[1];
-    int num_tiles = ncompute + nadaptor;
 
-    double max_accuracy = max_tiles; // TODO figure out this metric
+    double max_accuracy = max_tiles; 
 
-    double max_wires_tot = pow(4 * max_tiles, 1.0 / WIRE_POW);
-    double max_wires_curr = pow(4 * num_tiles, 1.0 / WIRE_POW);
-
-    if (dimension == 3)
-    {
-        max_wires_tot = pow(4 * max_tiles + 2 * pow(pow(max_tiles, 1.0 / 3.0), WIRE_POW), 1.0 / WIRE_POW);
-        max_wires_curr = pow(4 * num_tiles + 2 * pow(pow(num_tiles, 1.0 / 3.0), WIRE_POW), 1.0 / WIRE_POW);
-    }
     double accuracy_norm = accuracy / max_accuracy;
-    double wires_norm = min_d(max_wires_tot / wires, max_wires_curr / wires);
 
-    double final_score = prob->cost.alpha * accuracy_norm + prob->cost.beta * wires_norm;
+    double wires_norm = 1.0;
+    if (wires > 0.0001) {
+        wires_norm = 100 * max_tiles / wires;
+    } 
+
+    double final_score = min_d(accuracy_norm, wires_norm);
 
     if (opt.flags & SCORE)
     {
         printf("Pure Accuracy: %f / %f\n", accuracy, max_accuracy);
-        printf("Pure Connectivity: %f / (%f or %f)\n", wires, max_wires_tot, max_wires_curr);
+        printf("Pure Connectivity: %f \n", wires);
         printf("Normalized Accuracy: %f\n", accuracy_norm);
         printf("Normalized Connectivity: %f\n", wires_norm);
         printf("Final Score: %f\n", final_score);
