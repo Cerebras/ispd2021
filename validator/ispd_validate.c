@@ -1,7 +1,7 @@
 #include "util.h"
 #include "ispd_validate.h"
 
-#define DOUBLE_EPSILON 0.000000001 // Epsilon value for approximate double equality
+#define DOUBLE_EPSILON 0.000001 // Epsilon value for approximate double equality
 
 #define WIRE_POW 1.5 // Power to which each wire score is raised (L1.5 Norm)
 
@@ -1151,17 +1151,17 @@ void validate_prism_overlap()
 void validate_coverage()
 {
     // Assuming no overlap can just check if prism volume = sample space volume
-    int expected_volume = 1;
+    unsigned long long int expected_volume = 1;
     for (int i = 0; i < dimension; i += 1)
     {
         expected_volume *= prob->volume_shape[i] * sol->inv_sampling_step;
     }
 
-    int real_volume = 0;
+    unsigned long long int real_volume = 0;
 
     for (int i = 0; i < sol->nprims; i += 1)
     {
-        int prism_volume = 1;
+        unsigned long long int prism_volume = 1;
         for (int j = 0; j < dimension; j += 1)
         {
             prism_volume *= (get_close(&(sol->prism[i]), j) -
@@ -1170,7 +1170,7 @@ void validate_coverage()
         real_volume += prism_volume;
     }
 
-    fatalif(real_volume != expected_volume, "Coverage failed, expected: %d, real %d", expected_volume, real_volume);
+    fatalif(real_volume != expected_volume, "Coverage failed, expected: %llu, real %llu", expected_volume, real_volume);
 }
 
 int validate_adapters()
