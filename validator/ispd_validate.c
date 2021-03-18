@@ -1967,7 +1967,7 @@ double score_solution()
 
     double wires_norm = 1.0;
     if (wires > 0.0001) {
-        wires_norm = 100 * max_tiles / wires;
+        wires_norm = pow(100 * max_tiles, 1.0 / WIRE_POW) / wires;
     } 
 
     double final_score = min_d(accuracy_norm, wires_norm);
