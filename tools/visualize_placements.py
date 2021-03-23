@@ -44,18 +44,20 @@ def visualize_placements(problem: str, solution: str, out: str):
     tile_list = []
 
     while not line.startswith('compute_map:'):
-        prism = [int (x) for x in re.findall(r'\d+', line)]
+        prism = [int (x) for x in re.findall(r'-?\d+', line)]
 
-        prism_list.append(prism)
-        if dim == 2:
-            for i in range(0, prism[3]):
-                for j in range(0, prism[4]):
-                    tile_list.append(1.0 / (2 ** prism[0]))
-        else:
-            for i in range(0, prism[4]):
-                for j in range(0, prism[5]):
-                    for k in range(0, prism[6]):
+        if prism[0] >= 0:
+        
+            prism_list.append(prism)
+            if dim == 2:
+                for i in range(0, prism[3]):
+                    for j in range(0, prism[4]):
                         tile_list.append(1.0 / (2 ** prism[0]))
+            else:
+                for i in range(0, prism[4]):
+                    for j in range(0, prism[5]):
+                        for k in range(0, prism[6]):
+                            tile_list.append(1.0 / (2 ** prism[0]))
 
         line = next(sol_iter)
 
@@ -95,15 +97,15 @@ def visualize_placements(problem: str, solution: str, out: str):
 
     # Write adapters
     for i in range(0, len(x_adapter)):
-        rect = patches.Rectangle((y_adapter[i], x_adapter[i]), 1, 1, edgecolor='r',facecolor='none',linewidth=1)
+        rect = patches.Rectangle((y_adapter[i], x_adapter[i]), 1, 1, edgecolor='None',facecolor='r')
         ax.add_patch(rect)
 
     ax.set_title(F'{solution} PE Placement')
-    ax.axis([0, fabric[0], 0, fabric[1]])
+    ax.axis([0, fabric[1], 0, fabric[0]])
 
     if compute_tiles < 400:
-        ax.xaxis.set_ticks(np.arange(0, fabric[0] + 1, 1))
-        ax.yaxis.set_ticks(np.arange(0, fabric[1] + 1, 1))
+        ax.xaxis.set_ticks(np.arange(0, fabric[1] + 1, 1))
+        ax.yaxis.set_ticks(np.arange(0, fabric[0] + 1, 1))
         for i in range(0, len(tile_list)):
             tile_id = tile_id_map[x[i]][y[i]]
             if tile_id >= 0:
