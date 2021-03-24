@@ -65,12 +65,13 @@ for prism in prisms:
     z_low = prism[3]
     z_high = z_low + (prism[6] * 10) * 2** prism[0] - 1
     if z_low <= z and z <= z_high:
-        rect = patches.Rectangle((prism[1], prism[2]), (prism[4] * 10) * 2** prism[0] - 1, (prism[5] * 10) * 2** prism[0] - 1)
+        rect = patches.Rectangle((prism[1], prism[2]), (prism[4] * 10) * 2** prism[0], (prism[5] * 10) * 2** prism[0])
         rects.append(rect)
         resols.append(1.0 / (2**prism[0]))
 
 r = PatchCollection(rects, cmap=matplotlib.cm.jet)
 r.set_array(np.array(resols))
+r.set_clim([0, 1])
 
 ax.add_collection(r)
 ax.set_title(F'{args.output} PE Placement')
